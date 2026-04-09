@@ -6,6 +6,12 @@ Built as a freelance portfolio project demonstrating production-grade AI enginee
 
 ---
 
+## 🌐 Live Demo
+
+Try the framework live: **[https://ai-test-framework-satvik.streamlit.app/](https://ai-test-framework-satvik.streamlit.app/)**
+
+---
+
 ## 🏗️ Architecture
 
 The framework runs five AI agents in sequence:
@@ -127,8 +133,8 @@ Successful login redirects user to the home page
 
 ## 📊 Sample Output
 
-- ✅ 10 test cases generated from 4 features
-- ✅ 10/10 tests passing
+- ✅ 11 test cases generated from 4 features
+- ✅ 5/11 tests passing on live cloud deployment
 - ✅ 100% requirement coverage
 - ✅ HTML dashboard, Excel report (5 sheets), JSON report generated
 
@@ -186,6 +192,7 @@ ai-test-framework/
 │   └── app.py                    # Streamlit web interface
 ├── templates/
 │   └── report.html               # Jinja2 HTML report template
+├── verified_scripts/             # Verified Playwright test scripts
 ├── sample_requirements/
 │   └── sample_requirements.txt   # Example requirements document
 ├── Dockerfile
