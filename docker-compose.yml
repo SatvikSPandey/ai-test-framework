@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  # Streamlit UI — main user interface
+  streamlit:
+    build: .
+    container_name: ai-test-framework-ui
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./outputs:/app/outputs
+    environment:
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - BROWSER_PROVIDER=selenium
+      - HEADLESS=true
+    depends_on:
+      - ollama
+    networks:
+      - ai-test-network
+
+  # FastAPI REST layer
+  api:
+    build: .
+    container_name: ai-test-framework-api
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs:/app/outputs
+    environment:
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - BROWSER_PROVIDER=selenium
+      - HEADLESS=true
+    depends_on:
+      - ollama
+    networks:
+      - ai-test-network
+
+  # Ollama — local LLM server
+  ollama:
+    image: ollama/ollama
+    container_name: ai-test-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ai-test-network
+
+volumes:
+  ollama_data:
+
+networks:
+  ai-test-network:
+    driver: bridge

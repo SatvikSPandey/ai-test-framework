@@ -1,0 +1,33 @@
+Software Requirements Document
+Application: Automation Exercise E-Commerce Website
+URL: https://automationexercise.com
+
+Feature 1: User Registration
+New users can create an account on the platform.
+Acceptance Criteria:
+- User can register with a unique email address and password
+- Registration form validates required fields before submission
+- Successful registration redirects user to the home page
+- Duplicate email address shows an error message
+
+Feature 2: User Login
+Registered users can log in to access their account.
+Acceptance Criteria:
+- User can log in with valid email and password
+- Invalid credentials display an error message
+- Successful login redirects user to the home page
+- User sees their name displayed after login
+
+Feature 3: Product Search
+Users can search for products by name.
+Acceptance Criteria:
+- Search bar accepts a product name and returns results
+- Search results display matching products
+- Searching for a non-existent product shows a no results message
+
+Feature 4: Add to Cart
+Users can add products to their shopping cart.
+Acceptance Criteria:
+- User can add a product to the cart from the product page
+- Cart icon updates to show the number of items added
+- User can view all items in the cart

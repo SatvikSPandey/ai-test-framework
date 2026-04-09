@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Test Framework — Report {{ run_id }}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
+
+  .header {
+    background: #2E4057;
+    color: white;
+    padding: 30px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 { font-size: 24px; font-weight: 700; }
+  .header .meta { font-size: 13px; opacity: 0.8; text-align: right; line-height: 1.8; }
+
+  .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .metric-card .value { font-size: 36px; font-weight: 700; margin-bottom: 4px; }
+  .metric-card .label { font-size: 13px; color: #888; }
+  .metric-card.passed .value { color: #27ae60; }
+  .metric-card.failed .value { color: #e74c3c; }
+  .metric-card.total .value { color: #2E4057; }
+  .metric-card.coverage .value { color: #2980b9; }
+
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .card h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2E4057;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f2f5;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    background: #2E4057;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f2f5; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8f9fa; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-passed { background: #d4edda; color: #155724; }
+  .badge-failed { background: #f8d7da; color: #721c24; }
+  .badge-yes { background: #d4edda; color: #155724; }
+  .badge-no { background: #f8d7da; color: #721c24; }
+  .badge-high { background: #fff3cd; color: #856404; }
+  .badge-medium { background: #d1ecf1; color: #0c5460; }
+  .badge-low { background: #e2e3e5; color: #383d41; }
+
+  .coverage-bar-wrap { background: #f0f2f5; border-radius: 6px; height: 8px; flex: 1; margin: 0 12px; }
+  .coverage-bar { background: #27ae60; height: 8px; border-radius: 6px; }
+  .coverage-row { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
+  .coverage-label { width: 180px; font-weight: 500; }
+  .coverage-pct { width: 50px; text-align: right; font-weight: 600; color: #27ae60; }
+
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🤖 AI Test Framework — Run Report</h1>
+    <div style="font-size:13px;opacity:0.8;margin-top:4px;">Target: {{ target_url }}</div>
+  </div>
+  <div class="meta">
+    <div>Run ID: <strong>{{ run_id }}</strong></div>
+    <div>Timestamp: {{ timestamp }}</div>
+    <div>Source: {{ source_file }}</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric-card total">
+      <div class="value">{{ total_test_cases }}</div>
+      <div class="label">Total Tests</div>
+    </div>
+    <div class="metric-card passed">
+      <div class="value">{{ passed }}</div>
+      <div class="label">Passed</div>
+    </div>
+    <div class="metric-card failed">
+      <div class="value">{{ failed }}</div>
+      <div class="label">Failed</div>
+    </div>
+    <div class="metric-card coverage">
+      <div class="value">{{ coverage_percentage }}%</div>
+      <div class="label">Coverage</div>
+    </div>
+  </div>
+
+  <!-- Coverage Map -->
+  <div class="card">
+    <h2>📋 Requirement Coverage</h2>
+    {% for item in coverage_map %}
+    <div class="coverage-row">
+      <div class="coverage-label">{{ item.feature_name }}</div>
+      <div class="coverage-bar-wrap">
+        <div class="coverage-bar" style="width: {% if item.tests_written > 0 %}{{ (item.tests_passed / item.tests_written * 100)|int }}{% else %}0{% endif %}%"></div>
+      </div>
+      <div class="coverage-pct">{{ item.tests_passed }}/{{ item.tests_written }}</div>
+      <span class="badge {% if item.covered %}badge-yes{% else %}badge-no{% endif %}" style="margin-left:12px">
+        {% if item.covered %}✅ Covered{% else %}❌ Not Covered{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Execution Results -->
+  <div class="card">
+    <h2>▶️ Execution Results</h2>
+    <table>
+      <tr>
+        <th>Test ID</th>
+        <th>Status</th>
+        <th>Duration</th>
+        <th>Attempts</th>
+        <th>Error</th>
+      </tr>
+      {% for result in results %}
+      <tr>
+        <td><strong>{{ result.test_case_id }}</strong></td>
+        <td><span class="badge badge-{{ result.status.value }}">{{ result.status.value.upper() }}</span></td>
+        <td>{{ result.duration_seconds }}s</td>
+        <td>{{ result.attempts }}</td>
+        <td style="color:#e74c3c;font-size:12px;">{{ result.error_message or '' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+</div>
+
+<div class="footer">
+  Generated by AI Test Automation Framework &nbsp;|&nbsp; Run ID: {{ run_id }} &nbsp;|&nbsp; {{ timestamp }}
+</div>
+
+</body>
+</html>
