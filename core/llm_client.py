@@ -17,7 +17,7 @@ class LLMClient:
         if self.provider == "ollama":
             return self._call_ollama(prompt, system_prompt)
         elif self.provider == "cohere":
-            return self._call_cohere(prompt, system_prompt)
+            return self._call_cohere_with_retry(prompt, system_prompt)
         else:
             raise ValueError(f"Unknown LLM provider: {self.provider}")
 
@@ -45,18 +45,39 @@ class LLMClient:
                 "Make sure Ollama is running: open a terminal and run 'ollama serve'"
             )
         except requests.exceptions.Timeout:
-            raise TimeoutError("Ollama took too long to respond. Try a shorter prompt.")
+            raise TimeoutError("Ollama took too long to respond.")
         except Exception as e:
             raise RuntimeError(f"Ollama error: {str(e)}")
 
-    def _call_cohere(self, prompt: str, system_prompt: str = "") -> str:
+    def _call_cohere_with_retry(self, prompt: str, system_prompt: str = "", max_retries: int = 3) -> str:
+        """Calls Cohere with automatic retry on timeout or 5xx errors."""
         self.request_count += 1
         if self.request_count > 1:
             time.sleep(settings.cohere_request_delay)
 
+        last_error = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                result = self._call_cohere(prompt, system_prompt)
+                return result
+            except RuntimeError as e:
+                last_error = e
+                error_str = str(e)
+                # Retry on timeout or server errors
+                if "timed out" in error_str.lower() or "502" in error_str or "503" in error_str:
+                    print(f"Cohere attempt {attempt} failed, retrying in {attempt * 5}s...")
+                    time.sleep(attempt * 5)
+                else:
+                    raise
+        raise last_error
+
+    def _call_cohere(self, prompt: str, system_prompt: str = "") -> str:
         try:
             import cohere
-            co = cohere.ClientV2(api_key=settings.cohere_api_key)
+            co = cohere.ClientV2(
+                api_key=settings.cohere_api_key,
+                timeout=120
+            )
 
             messages = []
             if system_prompt:
