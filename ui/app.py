@@ -1,9 +1,20 @@
 import streamlit as st
 import sys
 import json
+import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Install Playwright browsers on Streamlit Cloud if not already installed
+try:
+    subprocess.run(
+        [sys.executable, "-m", "playwright", "install", "chromium"],
+        check=False,
+        capture_output=True
+    )
+except Exception:
+    pass
 
 from agents.requirements_parser import requirements_parser
 from agents.test_case_generator import test_case_generator
