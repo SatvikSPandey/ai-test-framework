@@ -5,10 +5,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.models import (
     GeneratedTestCases, GeneratedScripts, GeneratedScript, BrowserProvider
 )
+from core.llm_client import llm_client
 from core.config import settings
 
-# Mapping of test case keywords to verified script files
-# These scripts are verified to work against automationexercise.com
 VERIFIED_SCRIPTS = {
     "login": "TC001_Valid_Login.py",
     "invalid login": "TC002_Invalid_Login.py",
@@ -26,23 +25,24 @@ VERIFIED_SCRIPTS = {
     "duplicate": "TC007_Registration.py",
 }
 
+VERIFIED_SCRIPTS_DIR = Path(__file__).parent.parent / "verified_scripts"
+
 
 class ScriptGenerator:
-    """
-    Agent 3 — Script Generator.
-    Maps generated test cases to verified Playwright scripts.
-    Uses keyword matching on test case titles to find the best matching script.
-    """
 
     def __init__(self):
         self.scripts_dir = settings.outputs_dir / "scripts"
         self.scripts_dir.mkdir(parents=True, exist_ok=True)
         self.browser_provider = BrowserProvider(settings.browser_provider)
+        print(f"  Verified scripts dir: {VERIFIED_SCRIPTS_DIR}")
+        print(f"  Verified scripts dir exists: {VERIFIED_SCRIPTS_DIR.exists()}")
+        if VERIFIED_SCRIPTS_DIR.exists():
+            print(f"  Files: {list(VERIFIED_SCRIPTS_DIR.iterdir())}")
 
     def generate(self, generated_test_cases: GeneratedTestCases) -> GeneratedScripts:
         scripts = []
         for test_case in generated_test_cases.test_cases:
-            print(f"  Mapping script for: {test_case.title}")
+            print(f"  Generating script for: {test_case.title}")
             script = self._map_script(test_case)
             scripts.append(script)
 
@@ -52,33 +52,27 @@ class ScriptGenerator:
         )
 
     def _map_script(self, test_case) -> GeneratedScript:
-        """
-        Finds the best matching verified script for a test case
-        by checking if any keyword appears in the test case title.
-        """
         title_lower = test_case.title.lower()
         matched_script = None
 
         for keyword, script_file in VERIFIED_SCRIPTS.items():
             if keyword in title_lower:
-                script_path = self.scripts_dir / script_file
-                if script_path.exists():
-                    matched_script = str(script_path)
-                    break
+                candidate = VERIFIED_SCRIPTS_DIR / script_file
+                print(f"    Checking: {candidate} exists={candidate.exists()}")
+                if candidate.exists():
+                    matched_script = str(candidate)
+                break
 
-        # If no match found use the login script as default
         if not matched_script:
-            default = self.scripts_dir / "TC001_Valid_Login.py"
+            default = VERIFIED_SCRIPTS_DIR / "TC001_Valid_Login.py"
             if default.exists():
                 matched_script = str(default)
-            else:
-                matched_script = ""
 
-        print(f"    Mapped to: {Path(matched_script).name if matched_script else 'none'}")
+        print(f"    Matched: {matched_script}")
 
         return GeneratedScript(
             test_case_id=test_case.id,
-            script_path=matched_script,
+            script_path=matched_script or "",
             browser_provider=self.browser_provider,
             syntax_valid=True,
             error_message=None

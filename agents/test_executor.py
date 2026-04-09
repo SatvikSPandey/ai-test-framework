@@ -14,7 +14,6 @@ class TestExecutor:
     Agent 4 — Test Executor.
     Runs each generated script as a subprocess.
     Implements retry logic — each test gets up to max_retries attempts.
-    Captures screenshots on failure.
     """
 
     def __init__(self):
@@ -29,7 +28,7 @@ class TestExecutor:
         skipped = 0
 
         for script in generated_scripts.scripts:
-            print(f"  Executing: {script.test_case_id}")
+            print(f"  Executing: {script.test_case_id} — {script.script_path}")
             result = self._execute_with_retry(script)
             results.append(result)
 
@@ -53,6 +52,19 @@ class TestExecutor:
 
     def _execute_with_retry(self, script) -> TestResult:
         last_error = None
+        start_time = time.time()
+
+        # Guard against empty or missing script paths
+        if not script.script_path or not Path(script.script_path).exists():
+            error = f"Script not found: {script.script_path}"
+            print(f"    SKIPPED — {error}")
+            return TestResult(
+                test_case_id=script.test_case_id,
+                status=TestStatus.SKIPPED,
+                duration_seconds=0.0,
+                attempts=0,
+                error_message=error
+            )
 
         for attempt in range(1, settings.max_retries + 1):
             print(f"    Attempt {attempt}/{settings.max_retries}")
@@ -72,13 +84,12 @@ class TestExecutor:
                     )
                 else:
                     last_error = error
-                    print(f"    FAILED on attempt {attempt}")
+                    print(f"    FAILED on attempt {attempt}: {str(error)[:100]}")
                     if attempt < settings.max_retries:
                         time.sleep(2)
 
             except Exception as e:
                 last_error = str(e)
-                duration = time.time() - start_time
                 if attempt < settings.max_retries:
                     time.sleep(2)
 
@@ -92,6 +103,10 @@ class TestExecutor:
 
     def _run_script(self, script_path: str) -> tuple[bool, str | None]:
         import subprocess
+
+        if not script_path or not Path(script_path).exists():
+            return False, f"Script not found: {script_path}"
+
         try:
             result = subprocess.run(
                 [sys.executable, script_path],
