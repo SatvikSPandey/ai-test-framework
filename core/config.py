@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from pydantic_settings import BaseSettings
-from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     outputs_dir: Path = BASE_DIR / "outputs"
     templates_dir: Path = BASE_DIR / "templates"
     sample_requirements_dir: Path = BASE_DIR / "sample_requirements"
+    verified_scripts_dir: Path = BASE_DIR / "verified_scripts"
 
     # LLM settings
     llm_provider: str = "ollama"
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     cohere_request_delay: float = 2.0
 
     # Browser settings
-    browser_provider: str = "playwright"
+    browser_provider: str = "selenium"
     headless: bool = True
     browser_timeout: int = 30
     max_retries: int = 3
