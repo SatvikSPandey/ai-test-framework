@@ -10,3 +10,4 @@ libxrandr2
 libgbm1
 libdrm2
 libxkbcommon0
+libasound2
