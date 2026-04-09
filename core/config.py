@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "codellama"
     cohere_api_key: str = ""
-    cohere_model: str = "command-r"
+    cohere_model: str = "command-r-plus-08-2024"
     cohere_request_delay: float = 2.0
 
     # Browser settings

@@ -23,7 +23,6 @@ class LLMClient:
 
     def _call_ollama(self, prompt: str, system_prompt: str = "") -> str:
         url = f"{settings.ollama_base_url}/api/generate"
-
         payload = {
             "model": settings.ollama_model,
             "prompt": prompt,
@@ -35,13 +34,11 @@ class LLMClient:
                 "num_ctx": 4096
             }
         }
-
         try:
             response = requests.post(url, json=payload, timeout=300)
             response.raise_for_status()
             data = response.json()
             return data.get("response", "").strip()
-
         except requests.exceptions.ConnectionError:
             raise ConnectionError(
                 "Cannot connect to Ollama. "
@@ -59,15 +56,18 @@ class LLMClient:
 
         try:
             import cohere
-            co = cohere.Client(api_key=settings.cohere_api_key)
-            full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-            response = co.generate(
+            co = cohere.ClientV2(api_key=settings.cohere_api_key)
+
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+
+            response = co.chat(
                 model=settings.cohere_model,
-                prompt=full_prompt,
-                max_tokens=2048,
-                temperature=0.3
+                messages=messages
             )
-            return response.generations[0].text.strip()
+            return response.message.content[0].text.strip()
 
         except Exception as e:
             raise RuntimeError(f"Cohere error: {str(e)}")
@@ -81,22 +81,18 @@ class LLMClient:
         raw = self.generate(prompt, json_system)
         raw = raw.strip()
 
-        # Strip markdown code blocks
         if raw.startswith("```"):
             lines = raw.split("\n")
             raw = "\n".join(lines[1:-1]).strip()
 
-        # Find where the JSON starts
         start = raw.find("{")
         if start > 0:
             raw = raw[start:]
 
-        # Remove trailing comma before adding closing braces
         raw = raw.rstrip()
         if raw.endswith(","):
             raw = raw[:-1]
 
-        # Count and fix missing closing brackets and braces
         open_brackets = raw.count("[") - raw.count("]")
         open_braces = raw.count("{") - raw.count("}")
 
