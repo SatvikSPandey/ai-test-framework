@@ -54,9 +54,36 @@ class TestExecutor:
         last_error = None
         start_time = time.time()
 
-        # Guard against empty or missing script paths
-        if not script.script_path or not Path(script.script_path).exists():
-            error = f"Script not found: {script.script_path}"
+        script_path = script.script_path
+
+        # Guard: empty path
+        if not script_path:
+            error = "Script path is empty — no matching verified script found"
+            print(f"    SKIPPED — {error}")
+            return TestResult(
+                test_case_id=script.test_case_id,
+                status=TestStatus.SKIPPED,
+                duration_seconds=0.0,
+                attempts=0,
+                error_message=error
+            )
+
+        # Guard: path is a directory not a file
+        p = Path(script_path)
+        if p.is_dir():
+            error = f"Script path is a directory, not a file: {script_path}"
+            print(f"    SKIPPED — {error}")
+            return TestResult(
+                test_case_id=script.test_case_id,
+                status=TestStatus.SKIPPED,
+                duration_seconds=0.0,
+                attempts=0,
+                error_message=error
+            )
+
+        # Guard: file does not exist
+        if not p.exists():
+            error = f"Script file not found: {script_path}"
             print(f"    SKIPPED — {error}")
             return TestResult(
                 test_case_id=script.test_case_id,
@@ -71,7 +98,7 @@ class TestExecutor:
             start_time = time.time()
 
             try:
-                success, error = self._run_script(script.script_path)
+                success, error = self._run_script(script_path)
                 duration = time.time() - start_time
 
                 if success:
@@ -103,9 +130,6 @@ class TestExecutor:
 
     def _run_script(self, script_path: str) -> tuple[bool, str | None]:
         import subprocess
-
-        if not script_path or not Path(script_path).exists():
-            return False, f"Script not found: {script_path}"
 
         try:
             result = subprocess.run(
